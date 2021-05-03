@@ -1,5 +1,3 @@
-NOTE: https://github.com/Azure/azure-sdk-for-java/blob/master/sdk/storage/azure-storage-file-share/README.md#upload-data-bigger-than-4-mb-to-storage
-
 ## Connector Introduction
 Connector is a Java based backend extension for WaveMaker applications. Connectors are built as Java modules & exposes java based SDK to interact with the connector implementation.
 Each connector is built for a specific purpose and can be integrated with one of the external services. Connectors are imported & used in the WaveMaker application. Each connector runs on its own container thereby providing the ability to have it’s own version of the third party dependencies.
@@ -31,10 +29,6 @@ Azure File storage (https://azure.microsoft.com/en-in/services/storage/files/)  
 You can build this connector using following command
 ```Java
 mvn clean install
-```
-or
-```Java
-mvn clean install -DskipTests
 ```
 ### Deploy
 
