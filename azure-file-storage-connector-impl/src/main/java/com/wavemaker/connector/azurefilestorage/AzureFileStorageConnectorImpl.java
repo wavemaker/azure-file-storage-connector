@@ -1,29 +1,26 @@
 package com.wavemaker.connector.azurefilestorage;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
-
 import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.util.Context;
+import com.azure.storage.file.share.ShareFileClient;
 import com.azure.storage.file.share.models.ShareFileItem;
 import com.azure.storage.file.share.models.ShareFileProperties;
 import com.azure.storage.file.share.models.ShareItem;
 import com.azure.storage.file.share.models.ShareStorageException;
-import com.wavemaker.connector.azurefilestorage.AzureFileStorageConnector;
 import com.wavemaker.connector.azurefilestorage.exception.AzureFileStorageException;
 import com.wavemaker.connector.azurefilestorage.exception.ExceptionMessage;
 import com.wavemaker.connector.azurefilestorage.model.AzureFile;
 import com.wavemaker.connector.azurefilestorage.model.AzureFileResponse;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @Primary
@@ -199,7 +196,34 @@ public class AzureFileStorageConnectorImpl extends AbstractAzureFileShareClient 
         try {
             long bytes = uploadData.available();
             createFile(shareName, filePath, bytes);
-            getShareServiceClient().getShareClient(shareName).getFileClient(filePath).upload(uploadData, bytes);
+            ShareFileClient fileClient = getShareServiceClient().getShareClient(shareName).getFileClient(filePath);
+            long chunkSize = 4194304L; //ShareFileAsyncClient.FILE_DEFAULT_BLOCK_SIZE //It is private
+
+            if (bytes > chunkSize) {
+                byte[] byteArray = IOUtils.toByteArray(uploadData);
+
+                for (int offset = 0; offset < bytes; offset += chunkSize) {
+                    try {
+                        // the last chunk size is smaller than the others
+                        chunkSize = Math.min(bytes - offset, chunkSize);
+
+                        // select the chunk in the byte array
+                        byte[] subArray = Arrays.copyOfRange(byteArray, offset, (int) (offset + chunkSize));
+
+                        // upload the chunk
+                        fileClient.uploadWithResponse(new ByteArrayInputStream(subArray), chunkSize, (long) offset, null, Context.NONE);
+                    } catch (RuntimeException e) {
+                        logger.error("Failed to upload the file chunks", e);
+                        if (Boolean.TRUE.equals(fileClient.exists())) {
+                            fileClient.delete();
+                        }
+                        throw e;
+                    }
+                }
+            } else {
+                fileClient.upload(uploadData, bytes);
+            }
+
             return true;
         } catch (ShareStorageException | IOException e) {
             throw new AzureFileStorageException(ExceptionMessage.UPLOAD_DATA_TO_FILE, e.getMessage());
