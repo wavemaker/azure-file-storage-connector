@@ -61,6 +61,15 @@
     </dependencyManagement>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.wavemaker.connector.build</groupId>
+                    <artifactId>wavemaker-connector-build-maven-plugin</artifactId>
+                    <version>${wavemaker-version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
