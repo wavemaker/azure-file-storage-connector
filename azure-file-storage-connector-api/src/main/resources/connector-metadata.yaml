@@ -1,4 +1,4 @@
-version: "1.0"
+version: "2.0"
 name: "azurefilestorage"
 description: "A simple connector azurefilestorage that can be used in WaveMaker application"
 springConfigurationClass: "com.wavemaker.connector.azurefilestorage.AzureFileStorageConnectorConfiguration"
